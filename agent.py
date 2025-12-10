@@ -3,23 +3,35 @@
 import asyncio
 
 from agent_framework import HostedFileSearchTool
-from agent_framework_declarative._models import FileSearchTool
 from rich import print
 
+from add_data import create_vector_store, load_cached_vector_store
 from utils import create_openaichat_client
 
 
 async def example_pizza_bot() -> None:
-    # Create the File Search tool
-    vector_store_id = "vs_693a0172458481919d9cb08a21ca0ce7"
-    file_search = HostedFileSearchTool(vectorStoreIds=[vector_store_id])
+    # Try to load cached vector store first
 
-    agent = create_openaichat_client().create_agent(
+    client=create_openaichat_client()
+    cached = load_cached_vector_store()
+
+    if cached:
+        print("\n📦 Using cached vector store...")
+        file_ids, vector_store = cached
+    else:
+        print("\n🔨 Creating new vector store...")
+        file_ids, vector_store = await create_vector_store(client)
+
+    print("Vector store details:")
+    print(f" - ID: {vector_store.vector_store_id}")
+    print("Vector store ready for use.")
+
+    agent = client.create_agent(
         name="pizza-bot",
         instructions=open("instructions.txt").read(),
         top_p=0.7,
         temperature=0.7,
-        tools=file_search,
+        tools=HostedFileSearchTool(inputs=vector_store),
     )
 
     query = "Which Contoso Pizza stores are open after 8pm?"

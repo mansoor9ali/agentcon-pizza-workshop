@@ -1,4 +1,6 @@
 import os
+import json
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 import asyncio
 from agent_framework import HostedVectorStoreContent, HostedFileSearchTool
@@ -10,6 +12,36 @@ load_dotenv(override=True)
 
 
 DOCS_DIR = "./documents"
+VECTOR_STORE_CACHE_FILE = "./vector_store_cache.json"
+
+
+def load_cached_vector_store() -> tuple[list[str], HostedVectorStoreContent] | None:
+    """Load vector store information from local cache file."""
+    if not os.path.exists(VECTOR_STORE_CACHE_FILE):
+        return None
+
+    try:
+        with open(VECTOR_STORE_CACHE_FILE, 'r') as f:
+            cache_data = json.load(f)
+
+        vector_store_id = cache_data.get("vector_store_id")
+        file_ids = cache_data.get("file_ids", [])
+        created_at = cache_data.get("created_at")
+
+        if not vector_store_id:
+            return None
+
+        print(f"✅ Found cached vector store from {VECTOR_STORE_CACHE_FILE}")
+        print(f"   - Vector Store ID: {vector_store_id}")
+        print(f"   - Files: {len(file_ids)}")
+        print(f"   - Created: {created_at}")
+
+        vector_store_content = HostedVectorStoreContent(vector_store_id=vector_store_id)
+        return file_ids, vector_store_content
+
+    except Exception as e:
+        print(f"⚠️ Error loading cache: {e}")
+        return None
 
 
 async def create_vector_store(client: OpenAIResponsesClient) -> tuple[list[str], HostedVectorStoreContent]:
@@ -26,6 +58,7 @@ async def create_vector_store(client: OpenAIResponsesClient) -> tuple[list[str],
     # Create vector store first
     vector_store = await client.client.vector_stores.create(
         name="contoso-pizza-store-information",
+        description="Information about Contoso Pizza stores",
         expires_after={"anchor": "last_active_at", "days": 1},
     )
     print(f"Created vector store, ID: {vector_store.id}")
@@ -60,7 +93,22 @@ async def create_vector_store(client: OpenAIResponsesClient) -> tuple[list[str],
     if not file_ids:
         raise RuntimeError("No files uploaded. Put files in ./documents and re-run.")
 
-    vector_store_content=HostedVectorStoreContent(vector_store_id=vector_store.id)
+    vector_store_content = HostedVectorStoreContent(vector_store_id=vector_store.id)
+
+    # Save vector store information to local cache
+    cache_data = {
+        "vector_store_id": vector_store.id,
+        "file_ids": file_ids,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "name": "contoso-pizza-store-information",
+        "file_count": len(file_ids)
+    }
+
+    with open(VECTOR_STORE_CACHE_FILE, 'w') as f:
+        json.dump(cache_data, f, indent=2)
+
+    print(f"✅ Vector store info saved to {VECTOR_STORE_CACHE_FILE}")
+
     return file_ids, vector_store_content
 
 
@@ -90,10 +138,19 @@ async def main() -> None:
     stream = False
 
     try:
-        file_ids, vector_store = await create_vector_store(client)
+        # Try to load cached vector store first
+        cached = load_cached_vector_store()
+
+        if cached:
+            print("\n📦 Using cached vector store...")
+            file_ids, vector_store = cached
+        else:
+            print("\n🔨 Creating new vector store...")
+            file_ids, vector_store = await create_vector_store(client)
+
         print("Vector store details:")
         print(f" - ID: {vector_store.vector_store_id}")
-        print("Vector store created successfully.")
+        print("Vector store ready for use.")
 
     except Exception as e:
         print(f"\n❌ Error creating vector store: {e}")
@@ -113,7 +170,7 @@ async def main() -> None:
         instructions=open("instructions.txt").read(),
         top_p=0.7,
         temperature=0.7,
-        tools=HostedFileSearchTool(vectorStoreIds=[vector_store.vector_store_id]),
+        tools=HostedFileSearchTool(inputs=vector_store),
     )
 
     message = "Which Contoso Pizza stores are open after 8pm?"
