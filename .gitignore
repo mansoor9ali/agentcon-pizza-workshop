@@ -111,6 +111,7 @@ dmypy.json
 .azure/
 
 # Temporary files
+vector_store_cache.json
 *.tmp
 *.temp
 *.swp
