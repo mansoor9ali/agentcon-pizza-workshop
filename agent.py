@@ -6,6 +6,7 @@ from agent_framework import HostedFileSearchTool
 from rich import print
 
 from add_data import create_vector_store, load_cached_vector_store
+from tools import calculate_pizza_for_people
 from utils import create_openaichat_client
 
 
@@ -26,12 +27,13 @@ async def example_pizza_bot() -> None:
     print(f" - ID: {vector_store.vector_store_id}")
     print("Vector store ready for use.")
 
+
     agent = client.create_agent(
         name="pizza-bot",
         instructions=open("instructions.txt").read(),
         top_p=0.7,
         temperature=0.7,
-        tools=HostedFileSearchTool(inputs=vector_store),
+        tools=[HostedFileSearchTool(inputs=vector_store),calculate_pizza_for_people],
     )
 
     query = "Hi My Name is John, living in New york and my UserId is U123. Which Contoso Pizza stores are open after 8pm?"
