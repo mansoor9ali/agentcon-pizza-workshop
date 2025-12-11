@@ -20,7 +20,7 @@ async def http_mcp_example():
         ) as agent,
     ):
         result = await agent.run(
-            "Show me the available pizzas.",
+            "What is the price for a pizza hawai?",
             tools=mcp_server
         )
         print(result)

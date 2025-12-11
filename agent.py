@@ -220,6 +220,7 @@ async def run_pizza_bot_demo(use_mcp: bool = None) -> None:
         # Test queries
         queries = [
             "Show me the available pizzas.",
+            "What is the price for a pizza hawai?",
             "Hi My Name is John, living in New york and my UserId is U123. Show me the available pizzas.",
             "I'm having a party with 10 people who are very hungry. "
             "How much pizza should I order?",
