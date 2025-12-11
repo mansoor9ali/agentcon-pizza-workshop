@@ -6,8 +6,9 @@ import asyncio
 import os
 from pathlib import Path
 
-from agent_framework import HostedFileSearchTool
+from agent_framework import HostedFileSearchTool, MCPStreamableHTTPTool
 from agent_framework.openai import OpenAIResponsesClient
+from agent_framework_declarative._models import McpTool
 from dotenv import load_dotenv
 from rich import print
 
@@ -111,10 +112,39 @@ def create_pizza_agent(
     Returns:
         Configured agent instance
     """
+    # Use an HTTP-based MCP tool (streamable) so the agent can call Contoso Pizza microservices.
+    # Optionally include an Authorization header from environment variable MCP_API_TOKEN.
+    mcp_headers = {}
+    mcp_token = os.getenv("MCP_API_TOKEN")
+    if mcp_token:
+        mcp_headers["Authorization"] = f"Bearer {mcp_token}"
+
+    mcp_tool = MCPStreamableHTTPTool(
+        name="contoso_pizza_mcp",
+        url="https://ca-pizza-mcp-sc6u2typoxngc.graypond-9d6dd29c.eastus2.azurecontainerapps.io/sse",
+        allowed_tools=[
+            "get_pizzas",
+            "get_pizza_by_id",
+            "get_toppings",
+            "get_topping_by_id",
+            "get_topping_categories",
+            "get_orders",
+            "get_order_by_id",
+            "place_order",
+            "delete_order_by_id",
+        ],
+    )
+
+    mcp_tool.approval_mode="never_require"
+
+
+
     tools = [
         HostedFileSearchTool(inputs=vector_store),
         calculate_pizza_for_people,
+        mcp_tool,
     ]
+
 
     return client.create_agent(
         name="pizza-bot",
@@ -122,7 +152,7 @@ def create_pizza_agent(
         temperature=temperature,
         top_p=top_p,
         tools=tools,
-    )
+     )
 
 
 async def stream_agent_response(agent, query: str) -> None:
@@ -158,7 +188,7 @@ async def run_pizza_bot_demo() -> None:
         # Test queries
         queries = [
             "Hi My Name is John, living in New york and my UserId is U123. "
-            "Which Contoso Pizza stores are open after 8pm?",
+            "Show me the available pizzas.",
 
             "I'm having a party with 10 people who are very hungry. "
             "How much pizza should I order?",
