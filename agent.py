@@ -55,6 +55,16 @@ async def example_pizza_bot() -> None:
             print(chunk.text, end="", flush=True)
     print("\n")
 
+    # Test the pizza calculator tool
+    query2 = "I'm having a party with 10 people who are very hungry. How much pizza should I order?"
+    print(f"User: {query2}")
+    print("Assistant: ", end="")
+
+    async for chunk in agent.run_stream(query2):
+        if chunk.text:
+            print(chunk.text, end="", flush=True)
+    print("\n")
+
 
 async def main() -> None:
     await  example_pizza_bot()
