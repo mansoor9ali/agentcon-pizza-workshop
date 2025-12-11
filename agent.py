@@ -96,6 +96,7 @@ def load_instructions(file_path: str = INSTRUCTIONS_FILE) -> str:
 def create_pizza_agent(
     client: OpenAIResponsesClient,
     vector_store,
+    mcp_tool: MCPStreamableHTTPTool | None = None,
     temperature: float = DEFAULT_TEMPERATURE,
     top_p: float = DEFAULT_TOP_P
 ):
@@ -105,9 +106,9 @@ def create_pizza_agent(
     Args:
         client: OpenAI Responses client instance
         vector_store: Vector store for file search
+        mcp_tool: Optional MCP tool to include
         temperature: Sampling temperature for responses
         top_p: Nucleus sampling parameter
-        use_mcp: Whether to include MCP tool (None=auto-detect from env, True=force enable, False=disable)
 
     Returns:
         Configured agent instance
@@ -117,6 +118,10 @@ def create_pizza_agent(
         HostedFileSearchTool(inputs=vector_store),
         calculate_pizza_for_people,
     ]
+
+    # Add MCP tool if provided
+    if mcp_tool:
+        tools.append(mcp_tool)
 
     return client.create_agent(
         name="pizza-bot",
@@ -140,7 +145,7 @@ def get_mcp_tool(use_mcp: bool | None)-> MCPStreamableHTTPTool | None:
             # Get MCP URL from environment or use default
             mcp_url = os.getenv(
                 "MCP_URL",
-                "https://ca-pizza-mcp-sc6u2typoxngc.graypond-9d6dd29c.eastus2.azurecontainerapps.io/sse"
+                "https://ca-pizza-mcp-sc6u2typoxngc.graypond-9d6dd29c.eastus2.azurecontainerapps.io/mcp"
             )
 
             # Optionally include an Authorization header from environment variable MCP_API_TOKEN.
@@ -152,18 +157,8 @@ def get_mcp_tool(use_mcp: bool | None)-> MCPStreamableHTTPTool | None:
             mcp_tool = MCPStreamableHTTPTool(
                 name="contoso_pizza_mcp",
                 url=mcp_url,
-                headers=mcp_headers if mcp_headers else None,
-                allowed_tools=[
-                    "get_pizzas",
-                    "get_pizza_by_id",
-                    "get_toppings",
-                    "get_topping_by_id",
-                    "get_topping_categories",
-                    "get_orders",
-                    "get_order_by_id",
-                    "place_order",
-                    "delete_order_by_id",
-                ],
+                load_tools=True,
+                approval_mode="never_require",
             )
             mcp_tool.approval_mode = "never_require"
             print(f"✅ MCP tool configured successfully (URL: {mcp_url})")
@@ -176,22 +171,19 @@ def get_mcp_tool(use_mcp: bool | None)-> MCPStreamableHTTPTool | None:
     return None
 
 
-async def stream_agent_response(agent, query: str,mcp_tool: MCPStreamableHTTPTool) -> None:
+async def stream_agent_response(agent, query: str) -> None:
     """
     Stream agent response to console.
 
     Args:
         agent: Agent instance
         query: User query
-        mcp_tool: MCP tool instance
-        :param agent:
-        :param query:
-        :param mcp_tool:
     """
     print(f"User: {query}")
     print("Assistant: ", end="", flush=True)
 
-    async for chunk in agent.run_stream(query,tools=mcp_tool):
+
+    async for chunk in agent.run_stream(query):
         if chunk.text:
             print(chunk.text, end="", flush=True)
 
@@ -216,8 +208,11 @@ async def run_pizza_bot_demo(use_mcp: bool = None) -> None:
         client = create_openai_client()
         file_ids, vector_store = await get_or_create_vector_store(client)
 
+        # Get MCP tool if enabled
+        mcp_tool = get_mcp_tool(use_mcp=use_mcp)
+
         # Create agent with or without MCP
-        agent = create_pizza_agent(client, vector_store)
+        agent = create_pizza_agent(client, vector_store, mcp_tool=mcp_tool)
 
         print("=" * 60)
         print("🤖 Agent ready! Running demo queries...\n")
@@ -233,10 +228,9 @@ async def run_pizza_bot_demo(use_mcp: bool = None) -> None:
             "price of a large pepperoni pizza in Contoso Pizza?",
         ]
 
-        mcp_tool = get_mcp_tool(use_mcp=use_mcp)
         # Process each query
         for query in queries:
-            await stream_agent_response(agent, query,mcp_tool)
+            await stream_agent_response(agent, query)
 
     except Exception as e:
         print(f"❌ Error running pizza bot: {e}")
@@ -279,8 +273,8 @@ async def interactive_mode(agent) -> None:
 
 async def main() -> None:
     """Main entry point."""
-    # Run pizza bot demo with MCP enabled
-    await run_pizza_bot_demo(True)
+    # Run pizza bot demo with MCP auto-detection (or explicitly set to False/None)
+    await run_pizza_bot_demo(True)  # None = auto-detect from ENABLE_MCP env var
 
 
 if __name__ == "__main__":
