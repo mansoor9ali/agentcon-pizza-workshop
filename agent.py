@@ -162,6 +162,9 @@ async def run_pizza_bot_demo() -> None:
 
             "I'm having a party with 10 people who are very hungry. "
             "How much pizza should I order?",
+            "Can you give me directions to the nearest Contoso Pizza store from 123 Main St, New York, NY?",
+            "What are the most popular pizza toppings at Contoso Pizza?",
+            "price of a large pepperoni pizza in Contoso Pizza?",
         ]
 
         # Process each query
