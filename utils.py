@@ -1,12 +1,11 @@
-# utils.py
 import os
+import sys
 
-import openai
-from dotenv import load_dotenv
 from agent_framework.openai import OpenAIChatClient
+from dotenv import load_dotenv
 from foundry_local import FoundryLocalManager
 from foundry_local.models import DeviceType
-import sys
+
 if sys.version_info >= (3, 11):
     from enum import StrEnum
 
