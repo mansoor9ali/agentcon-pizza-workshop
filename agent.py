@@ -200,6 +200,7 @@ async def run_pizza_bot_demo(use_mcp: bool = None) -> None:
                  - True: Force enable MCP
                  - False: Disable MCP
     """
+    mcp_tool = None
     try:
         print("🍕 Starting Contoso Pizza Bot Demo")
         print("=" * 60)
@@ -236,6 +237,13 @@ async def run_pizza_bot_demo(use_mcp: bool = None) -> None:
     except Exception as e:
         print(f"❌ Error running pizza bot: {e}")
         raise
+    finally:
+        # Properly cleanup MCP tool if it was created
+        if mcp_tool is not None:
+            try:
+                await mcp_tool.__aexit__(None, None, None)
+            except Exception:
+                pass  # Ignore cleanup errors
 
 
 async def interactive_mode(agent) -> None:
