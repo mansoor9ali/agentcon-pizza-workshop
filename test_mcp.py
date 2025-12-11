@@ -1,8 +1,15 @@
 import asyncio
+import os
 from agent_framework import ChatAgent, MCPStreamableHTTPTool
-
+from dotenv import load_dotenv
 from utils import create_openaichat_client
 
+# Load environment variables once at module level
+load_dotenv()
+mcp_url = os.getenv(
+    "MCP_URL",
+    "https://test-mcp.contosopizza.ai/mcp"
+)
 
 async def list_mcp_tools():
     """List all available tools from the MCP server."""
@@ -11,7 +18,7 @@ async def list_mcp_tools():
 
     async with MCPStreamableHTTPTool(
         name="contoso_pizza",
-        url="https://ca-pizza-mcp-sc6u2typoxngc.graypond-9d6dd29c.eastus2.azurecontainerapps.io/mcp",
+        url=mcp_url,
         load_tools=True,
         approval_mode="never_require",
     ) as mcp_server:
@@ -84,7 +91,7 @@ async def http_mcp_example():
     async with (
         MCPStreamableHTTPTool(
             name="contoso_pizza",
-            url="https://ca-pizza-mcp-sc6u2typoxngc.graypond-9d6dd29c.eastus2.azurecontainerapps.io/mcp",
+            url=mcp_url,
             load_tools=True,
             approval_mode="never_require",
         ) as mcp_server,
@@ -109,4 +116,4 @@ if __name__ == "__main__":
     print("Now running example order...\n")
 
     # Run the example
-    # asyncio.run(http_mcp_example())
+    asyncio.run(http_mcp_example())

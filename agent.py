@@ -145,7 +145,7 @@ def get_mcp_tool(use_mcp: bool | None)-> MCPStreamableHTTPTool | None:
             # Get MCP URL from environment or use default
             mcp_url = os.getenv(
                 "MCP_URL",
-                "https://ca-pizza-mcp-sc6u2typoxngc.graypond-9d6dd29c.eastus2.azurecontainerapps.io/mcp"
+                "https://test-mcp.contosopizza.ai/mcp"
             )
 
             # Optionally include an Authorization header from environment variable MCP_API_TOKEN.
