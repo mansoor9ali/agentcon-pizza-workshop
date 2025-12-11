@@ -34,7 +34,7 @@ async def example_pizza_bot() -> None:
         tools=HostedFileSearchTool(inputs=vector_store),
     )
 
-    query = "Hi My Name is John , living in New york and my UserId is U123. Which Contoso Pizza stores are open after 8pm?"
+    query = "Hi My Name is John, living in New york and my UserId is U123. Which Contoso Pizza stores are open after 8pm?"
     print(f"User: {query}")
     result = await agent.run(query)
     print(f"Result: {result}\n")

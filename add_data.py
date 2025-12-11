@@ -7,7 +7,6 @@ from agent_framework import HostedVectorStoreContent, HostedFileSearchTool
 from agent_framework.openai import OpenAIResponsesClient
 
 
-# Load environment variables (expects PROJECT_CONNECTION_STRING in .env)
 load_dotenv(override=True)
 
 
