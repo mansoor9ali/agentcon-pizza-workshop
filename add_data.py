@@ -173,7 +173,7 @@ async def main() -> None:
         tools=HostedFileSearchTool(inputs=vector_store),
     )
 
-    message = "Which Contoso Pizza stores are open after 8pm?"
+    message = "Hi My Name is John , living in New york and my UserId is U123. Which Contoso Pizza stores are open after 8pm?"
     print(f"User: {message}")
     if stream:
         print("Assistant: ", end="")
