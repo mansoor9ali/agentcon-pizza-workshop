@@ -1,5 +1,5 @@
 """
-Database module for Contoso Pizza MCP Server.
+Database module for ABC Pizza MCP Server.
 Provides async PostgreSQL operations using asyncpg with connection pooling.
 """
 

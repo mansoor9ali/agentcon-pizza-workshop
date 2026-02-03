@@ -123,3 +123,4 @@ vector_store_cache.json
 # documents/
 # *.md
 
+/mednotes-ai-main/

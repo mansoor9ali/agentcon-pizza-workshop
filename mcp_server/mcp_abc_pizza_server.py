@@ -36,14 +36,37 @@ from pydantic import BaseModel, Field
 import mcp.types as mcp_types  # Import MCP types for notifications
 
 # Handle imports for both standalone execution and package import
-if __name__ == "__main__":
-    # Running as standalone script
-    from database import Database
-    from config import server_config, auth_config
-else:
-    # Imported as part of a package
+try:
     from .database import Database
     from .config import server_config, auth_config
+except ImportError:
+    from database import Database
+    from config import server_config, auth_config
+
+
+# ============================================================================
+# SAFE PRINT FUNCTION (handles encoding issues on Windows)
+# ============================================================================
+
+def safe_print(*args, **kwargs):
+    """Print that handles encoding errors gracefully (for Windows console)."""
+    # When running in stdio mode, print to stderr to not interfere with MCP protocol
+    file = kwargs.pop('file', sys.stderr)
+    try:
+        print(*args, file=file, **kwargs)
+    except UnicodeEncodeError:
+        # Replace problematic characters with ASCII alternatives
+        text = " ".join(str(arg) for arg in args)
+        # Replace common emoji with ASCII
+        text = text.replace("🔐", "[AUTH]")
+        text = text.replace("🔓", "[OPEN]")
+        text = text.replace("⚠️", "[WARN]")
+        text = text.replace("🍕", "[PIZZA]")
+        text = text.replace("✅", "[OK]")
+        text = text.replace("👋", "[BYE]")
+        text = text.replace("🚀", "[START]")
+        text = text.replace("📡", "[NET]")
+        print(text, file=file, **kwargs)
 
 
 # ============================================================================
@@ -53,7 +76,7 @@ else:
 def create_auth_provider():
     """Create authentication provider based on configuration."""
     if not auth_config.enabled:
-        print("🔓 Authentication: DISABLED")
+        safe_print("🔓 Authentication: DISABLED")
         return None
 
     auth_type = auth_config.auth_type.upper()
@@ -61,10 +84,10 @@ def create_auth_provider():
     if auth_type == "JWT":
         from fastmcp.server.auth.providers.jwt import JWTVerifier
 
-        print(f"🔐 Authentication: JWT")
-        print(f"   JWKS URI: {auth_config.jwt_jwks_uri}")
-        print(f"   Issuer: {auth_config.jwt_issuer}")
-        print(f"   Audience: {auth_config.jwt_audience}")
+        safe_print(f"🔐 Authentication: JWT")
+        safe_print(f"   JWKS URI: {auth_config.jwt_jwks_uri}")
+        safe_print(f"   Issuer: {auth_config.jwt_issuer}")
+        safe_print(f"   Audience: {auth_config.jwt_audience}")
 
         return JWTVerifier(
             jwks_uri=auth_config.jwt_jwks_uri,
@@ -80,10 +103,10 @@ def create_auth_provider():
         # For APIKEY auth, use the list of API keys
         if auth_type == "BEARER":
             if not auth_config.bearer_token:
-                print("⚠️  WARNING: BEARER auth enabled but no token configured!")
+                safe_print("⚠️  WARNING: BEARER auth enabled but no token configured!")
                 return None
 
-            print(f"🔐 Authentication: BEARER (static token)")
+            safe_print(f"🔐 Authentication: BEARER (static token)")
             tokens = {
                 auth_config.bearer_token: {
                     "client_id": "bearer-client",
@@ -92,11 +115,11 @@ def create_auth_provider():
             }
         else:  # APIKEY
             if not auth_config.api_keys:
-                print("⚠️  WARNING: APIKEY auth enabled but no keys configured!")
+                safe_print("⚠️  WARNING: APIKEY auth enabled but no keys configured!")
                 return None
 
-            print(f"🔐 Authentication: API Key")
-            print(f"   Valid keys configured: {len(auth_config.api_keys)}")
+            safe_print(f"🔐 Authentication: API Key")
+            safe_print(f"   Valid keys configured: {len(auth_config.api_keys)}")
 
             # Create token map from API keys
             tokens = {}
@@ -109,7 +132,7 @@ def create_auth_provider():
         return StaticTokenVerifier(tokens=tokens)
 
     else:
-        print(f"🔓 Authentication: NONE (type={auth_type})")
+        safe_print(f"🔓 Authentication: NONE (type={auth_type})")
         return None
 
 
@@ -130,18 +153,18 @@ class AppContext:
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     """Manage application lifecycle with type-safe context."""
-    print("🍕 Starting ABC Pizza MCP Server...")
+    safe_print("🍕 Starting ABC Pizza MCP Server...")
 
     # Initialize database connection pool on startup
     db = await Database.connect()
-    print("✅ Database connection pool established")
+    safe_print("✅ Database connection pool established")
 
     try:
         yield AppContext(db=db)
     finally:
         # Cleanup on shutdown
         await db.disconnect()
-        print("👋 Database connection pool closed")
+        safe_print("👋 Database connection pool closed")
 
 
 # ============================================================================
@@ -629,9 +652,10 @@ if __name__ == "__main__":
         if arg == "--port" and i + 1 < len(sys.argv):
             port = int(sys.argv[i + 1])
 
-    print(f"🚀 Starting server with transport={transport}")
+    safe_print(f"🚀 Starting server with transport={transport}")
 
     if transport == "http":
+        safe_print(f"📡 Listening on http://{host}:{port}")
         mcp.run(transport="http", host=host, port=port)
     else:
         mcp.run()

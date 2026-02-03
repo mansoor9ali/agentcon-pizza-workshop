@@ -1,5 +1,5 @@
 """
-Contoso Pizza Bot Agent
+ABC Pizza Bot Agent
 A conversational AI agent for pizza ordering and store information.
 """
 import asyncio
@@ -9,7 +9,6 @@ from pathlib import Path
 from agent_framework import HostedFileSearchTool, MCPStreamableHTTPTool
 from agent_framework.openai import OpenAIResponsesClient
 from dotenv import load_dotenv
-from rich import print
 
 from add_data import create_vector_store, load_cached_vector_store
 from tools import calculate_pizza_for_people
@@ -142,27 +141,34 @@ def get_mcp_tool(use_mcp: bool | None)-> MCPStreamableHTTPTool | None:
         try:
             print("🔌 Attempting to configure MCP tool...")
 
-            # Get MCP URL from environment or use default
+            # Use HTTP transport with remote MCP server
             mcp_url = os.getenv(
                 "MCP_URL",
-                "https://test-mcp.contosopizza.ai/mcp"
+                f"http://{os.getenv('MCP_HOST', 'localhost')}:{os.getenv('MCP_PORT', '8366')}/mcp"
             )
 
-            # Optionally include an Authorization header from environment variable MCP_API_TOKEN.
+            # Get API key from MCP_API_TOKEN or AUTH_API_KEYS (first key)
             mcp_headers = {}
             mcp_token = os.getenv("MCP_API_TOKEN")
+            if not mcp_token:
+                # Fallback to AUTH_API_KEYS (use the first key)
+                api_keys = os.getenv("AUTH_API_KEYS", "")
+                if api_keys:
+                    mcp_token = api_keys.split(",")[0].strip()
+
             if mcp_token:
                 mcp_headers["Authorization"] = f"Bearer {mcp_token}"
+                print(f"🔐 Using API Key: {mcp_token[:8]}...")
 
             mcp_tool = MCPStreamableHTTPTool(
-                name="contoso_pizza_mcp",
+                name="abc_pizza_mcp",
                 url=mcp_url,
                 load_tools=True,
                 approval_mode="never_require",
+                headers=mcp_headers if mcp_headers else None,
             )
             mcp_tool.approval_mode = "never_require"
-            print(f"✅ MCP tool configured successfully (URL: {mcp_url})")
-
+            print(f"✅ MCP HTTP tool configured (URL: {mcp_url})")
             return mcp_tool
 
         except Exception as e:
@@ -202,7 +208,7 @@ async def run_pizza_bot_demo(use_mcp: bool = None) -> None:
     """
     mcp_tool = None
     try:
-        print("🍕 Starting Contoso Pizza Bot Demo")
+        print("🍕 Starting ABC Pizza Bot Demo")
         print("=" * 60)
 
         # Initialize client and vector store
@@ -225,9 +231,9 @@ async def run_pizza_bot_demo(use_mcp: bool = None) -> None:
             "Hi My Name is John, living in New york and my UserId is U123. Show me the available pizzas.",
             "I'm having a party with 10 people who are very hungry. "
             "How much pizza should I order?",
-            "Can you give me directions to the nearest Contoso Pizza store from 123 Main St, New York, NY?",
-            "What are the most popular pizza toppings at Contoso Pizza?",
-            "price of a large pepperoni pizza in Contoso Pizza?",
+            "Can you give me directions to the nearest ABC Pizza store from 123 Main St, New York, NY?",
+            "What are the most popular pizza toppings at ABC Pizza?",
+            "price of a large pepperoni pizza in ABC Pizza?",
         ]
 
         # Process each query

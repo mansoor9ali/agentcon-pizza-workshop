@@ -1,13 +1,13 @@
-python -u mcp_abc_pizza_server.py --http
+python -u  .\mcp_server\mcp_abc_pizza_server.py --http
 
 # Test admin tools (in-process)
-python my_client.py --admin
+python .\mcp_client\my_client.py --admin
 
 # Test admin tools via HTTP with API key
-python my_client.py --http --api-key pizza-api-key-12345 --admin
+python .\mcp_client\my_client.py --http --api-key pizza-api-key-12345 --admin
 
 # All other commands still work:
-python my_client.py                    # Full test suite
-python my_client.py --http             # HTTP test
-python my_client.py --demo             # Chatbot demo
+python .\mcp_client\my_client.py                    # Full test suite
+python .\mcp_client\my_client.py --http             # HTTP test
+python .\mcp_client\my_client.py --demo             # Chatbot demo
 

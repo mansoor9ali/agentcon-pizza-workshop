@@ -44,11 +44,11 @@ def load_cached_vector_store() -> tuple[list[str], HostedVectorStoreContent] | N
 
 
 async def create_vector_store(client: OpenAIResponsesClient) -> tuple[list[str], HostedVectorStoreContent]:
-    """Upload local Contoso docs and build the vector store."""
+    """Upload local ABC docs and build the vector store."""
     if not os.path.isdir(DOCS_DIR):
         raise FileNotFoundError(
             f"Documents folder not found at {DOCS_DIR}. "
-            "Create it and add your Contoso Pizza files (PDF, TXT, MD, etc.)."
+            "Create it and add your ABC Pizza files (PDF, TXT, MD, etc.)."
         )
 
     print(f"Uploading files from {DOCS_DIR} ...")
@@ -56,8 +56,8 @@ async def create_vector_store(client: OpenAIResponsesClient) -> tuple[list[str],
 
     # Create vector store first
     vector_store = await client.client.vector_stores.create(
-        name="contoso-pizza-store-information",
-        description="Information about Contoso Pizza stores",
+        name="abc-pizza-store-information",
+        description="Information about ABC Pizza stores",
         expires_after={"anchor": "last_active_at", "days": 1},
     )
     print(f"Created vector store, ID: {vector_store.id}")
@@ -99,7 +99,7 @@ async def create_vector_store(client: OpenAIResponsesClient) -> tuple[list[str],
         "vector_store_id": vector_store.id,
         "file_ids": file_ids,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "name": "contoso-pizza-store-information",
+        "name": "abc-pizza-store-information",
         "file_count": len(file_ids)
     }
 
@@ -172,7 +172,7 @@ async def main() -> None:
         tools=HostedFileSearchTool(inputs=vector_store),
     )
 
-    message = "Hi My Name is John , living in New york and my UserId is U123. Which Contoso Pizza stores are open after 8pm?"
+    message = "Hi My Name is John , living in New york and my UserId is U123. Which ABC Pizza stores are open after 8pm?"
     print(f"User: {message}")
     if stream:
         print("Assistant: ", end="")

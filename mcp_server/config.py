@@ -1,5 +1,5 @@
 """
-Configuration module for Contoso Pizza MCP Server.
+Configuration module for ABC Pizza MCP Server.
 Loads environment variables for database and server configuration.
 """
 
@@ -32,7 +32,7 @@ class DatabaseConfig:
 @dataclass
 class ServerConfig:
     """MCP Server configuration."""
-    name: str = "Contoso Pizza MCP Server"
+    name: str = "ABC Pizza MCP Server"
     transport: str = "stdio"
     host: str = "0.0.0.0"
     port: int = 8366
@@ -74,7 +74,7 @@ def get_database_config() -> DatabaseConfig:
 def get_server_config() -> ServerConfig:
     """Get server configuration from environment variables."""
     return ServerConfig(
-        name=os.getenv("MCP_SERVER_NAME", "Contoso Pizza MCP Server"),
+        name=os.getenv("MCP_SERVER_NAME", "ABC Pizza MCP Server"),
         transport=os.getenv("MCP_TRANSPORT", "stdio"),
         host=os.getenv("MCP_HOST", "0.0.0.0"),
         port=int(os.getenv("MCP_PORT", "8366")),
